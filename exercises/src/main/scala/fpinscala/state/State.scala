@@ -30,17 +30,55 @@ object RNG {
       (f(a), rng2)
     }
 
-  def nonNegativeInt(rng: RNG): (Int, RNG) = ???
+  def nonNegativeInt(rng: RNG): (Int, RNG) = {
+    val (x, rng2) = rng.nextInt
+    x match {
+      case Int.MinValue => (0, rng2)
+      case _ => (Math.abs(x), rng2)
+    }
+  }
 
-  def double(rng: RNG): (Double, RNG) = ???
+  def double(rng: RNG): (Double, RNG) = {
+    val (x, rng2) = nonNegativeInt(rng)
+    val y = Math.abs(x - 1)
+    val d = (y.toDouble/Int.MaxValue.toDouble)
+    (d, rng2)
+  }
 
-  def intDouble(rng: RNG): ((Int,Double), RNG) = ???
+  def double_re: Rand[Double] = {
+    map(nonNegativeInt)(x => x.toDouble/(Int.MaxValue + 1).toDouble)
+  }
 
-  def doubleInt(rng: RNG): ((Double,Int), RNG) = ???
+  def intDouble(rng: RNG): ((Int,Double), RNG) = {
+    val (one, rng2) = rng.nextInt
+    val (two, rng3) = double(rng2)
+    ((one, two), rng3)
+  }
 
-  def double3(rng: RNG): ((Double,Double,Double), RNG) = ???
+  def doubleInt(rng: RNG): ((Double,Int), RNG) = {
+    val (one, rng2) = double(rng)
+    val (two, rng3) = rng2.nextInt
+    ((one, two), rng3)
+  }
 
-  def ints(count: Int)(rng: RNG): (List[Int], RNG) = ???
+  def double3(rng: RNG): ((Double,Double,Double), RNG) = {
+    val (one, rng2) = double(rng)
+    val (two, rng3) = double(rng2)
+    val (three, rng4) = double(rng3)
+    ((one, two, three), rng4)
+  }
+
+  def ints(count: Int)(rng: RNG): (List[Int], RNG) = {
+    def go(count: Int, list: List[Int], rng: RNG): (List[Int], RNG) = {
+      if(count == 0) (list, rng)
+      else {
+        val (r, rng2) = rng.nextInt
+        go(count - 1, r :: list, rng2)
+      }
+    }
+
+    go(count, Nil, rng)
+  }
 
   def map2[A,B,C](ra: Rand[A], rb: Rand[B])(f: (A, B) => C): Rand[C] = ???
 
@@ -67,4 +105,19 @@ case class Machine(locked: Boolean, candies: Int, coins: Int)
 object State {
   type Rand[A] = State[RNG, A]
   def simulateMachine(inputs: List[Input]): State[Machine, (Int, Int)] = ???
+}
+
+object StateTest{
+  import RNG._
+
+  def main(args: Array[String]): Unit = {
+    val rng = Simple(123)
+    val a = nonNegativeInt(rng)
+    val b = double(rng)
+    val c = ints(3)(rng)
+    val d = double_re(rng)
+
+
+    println(d)
+  }
 }
